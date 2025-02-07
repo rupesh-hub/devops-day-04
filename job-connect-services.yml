@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mysql-service:
     container_name: mysql-service
@@ -15,7 +13,7 @@ services:
     ports:
       - '3306:3306'
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", '-uroot', '-proot' ]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "mysql-service", '-uroot', '-proot' ]
       timeout: 20s
       interval: 5s
       retries: 5
