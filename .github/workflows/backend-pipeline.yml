@@ -63,7 +63,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: JOB-CONNECT-BACKEND
-          file: docker/backend/chat-service/Dockerfile
+          file: docker/backend/Dockerfile
           push: true
           platforms: linux/amd64
           tags: |
