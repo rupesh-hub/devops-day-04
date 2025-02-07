@@ -1,0 +1,32 @@
+<nav class="bg-gray-800 p-4">
+  <div class="container mx-auto flex items-center justify-between">
+    <!-- Logo -->
+    <div class="flex items-center">
+      <img [src]="logo" alt="Logo" class="h-8 w-8">
+      <a href="/" class="text-white text-xl ml-2 font-serif text-sm">Job Connect</a>
+    </div>
+
+    <!-- Navigation Items -->
+    <div class="flex items-center space-x-6">
+      <a href="/" class="text-gray-300 hover:text-white">Home</a>
+
+      <!-- Authenticated Links -->
+      <ng-container *ngIf="authService.isAuthenticated()">
+        <a href="/profile" class="text-gray-300 hover:text-white">Profile</a>
+        <button
+          (click)="authService.logout()"
+          class="text-gray-300 hover:text-white">
+          Logout
+        </button>
+      </ng-container>
+
+      <!-- Non-Authenticated Link -->
+      <ng-container *ngIf="!authService.isAuthenticated()">
+        <a href="/login"
+           class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+          Login
+        </a>
+      </ng-container>
+    </div>
+  </div>
+</nav>

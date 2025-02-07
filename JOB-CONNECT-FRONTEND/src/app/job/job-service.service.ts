@@ -1,7 +1,9 @@
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {environment} from "../../environments/environment-development";
-import {Observable} from "rxjs";
+import {Observable, throwError} from "rxjs";
+import {map, catchError} from 'rxjs/operators';
+
 import {GlobalResponse, JobRequest, JobResponse} from "./list-job/model/job-model";
 
 @Injectable({
@@ -10,14 +12,27 @@ import {GlobalResponse, JobRequest, JobResponse} from "./list-job/model/job-mode
 export class JobService {
 
   private BASE_URL = `${environment.API_URL}/jobs`;
-  constructor(private _http: HttpClient) { }
+
+  constructor(private _http: HttpClient) {
+  }
 
   public allJobs(): Observable<GlobalResponse<JobResponse[]>> {
     return this._http.get<GlobalResponse<JobResponse[]>>(this.BASE_URL);
   }
 
-  public getJobById(id: number): Observable<GlobalResponse<JobResponse>> {
-    return this._http.get<GlobalResponse<JobResponse>>(`${this.BASE_URL}/${id}`);
+  public getJobById(id: string): Observable<JobResponse> {
+    return this._http.get<GlobalResponse<JobResponse>>(`${this.BASE_URL}/${id}`).pipe(
+      map(response => {
+        if (!response.data) {
+          throw new Error('Job data is missing');
+        }
+        return response.data;
+      }),
+      catchError(error => {
+        console.error('Error getting job:', error);
+        return throwError(() => error); // Proper throwError usage
+      })
+    );
   }
 
   public createJob(request: JobRequest): Observable<GlobalResponse<JobResponse>> {
