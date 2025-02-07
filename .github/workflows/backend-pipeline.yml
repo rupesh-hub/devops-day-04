@@ -5,106 +5,73 @@ on:
     branches:
       - main
     paths:
-      - JOB-CONNECT-BACKEND/**
-      - docker/backend/**
-      - docker-compose.yml
-      - .github/workflows/backend-*.yml
+      - 'JOB-CONNECT-BACKEND/**'
+      - 'docker/backend/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/backend-*.yml'
 
 jobs:
-  compile:
+  test-and-build:
     runs-on: self-hosted
-    name: Compile
+    name: Test and Build
+    outputs:
+      version: ${{ steps.get_version.outputs.VERSION }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup java environment
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: 17
           distribution: 'corretto'
+          java-version: '17'
+          cache: 'maven'
 
-      - name: Compile project
+      - name: Run tests and build
         run: |
           cd JOB-CONNECT-BACKEND
-          ./mvnw clean compile
+          ./mvnw clean verify package
 
-  unit-tests:
+      - name: Extract version
+        id: get_version  # Add ID to reference this step
+        run: |
+          cd CHAT-SERVICE
+          VERSION=$(./mvnw -q -Dexec.executable='echo' -Dexec.args='${project.version}' --non-recursive exec:exec)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"  # Debug output
+
+  docker-publish:
+    needs: test-and-build
     runs-on: self-hosted
-    name: Unit tests
+    name: Build and Publish Docker Image
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Setup java environment
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: 'corretto'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Running unit tests
-        run: |
-          cd JOB-CONNECT-BACKEND
-          ./mvnw clean test
-
-  build:
-    runs-on: self-hosted
-    needs: [ compile, unit-tests ]
-    name: Build
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup java environment
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: 'corretto'
-
-      - name: Build project
-        run: |
-          cd JOB-CONNECT-BACKEND
-          ./mvnw clean package
-
-  build-image:
-    needs: [ build ]
-    runs-on: self-hosted
-    name: Build docker image
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Extract project version
-        id: extract_version
-        run: |
-          cd JOB-CONNECT-BACKEND
-          echo "VERSION=$(./mvnw -q -Dexec.executable='echo' -Dexec.args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_OUTPUT
-
-      - name: Login to dockerhub
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push backend image to dockerhub
+      - name: Build and push image
         uses: docker/build-push-action@v5
         with:
           context: JOB-CONNECT-BACKEND
-          file: docker/backend/Dockerfile
+          file: docker/backend/chat-service/Dockerfile
           push: true
           platforms: linux/amd64
-          tags: ${{ secrets.DOCKER_USERNAME }}/job-connect-backend:${{ steps.extract_version.outputs.VERSION }},${{ secrets.DOCKER_USERNAME }}/job-connect-backend:latest
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/job-connect-backend:${{ needs.test-and-build.outputs.version }}
+            ${{ secrets.DOCKER_USERNAME }}/job-connect-backend:latest
           build-args: |
-            PROFILE=production
-            APP_VERSION=${{ steps.extract_version.outputs.VERSION }}
+            PROFILE=dev
+            APP_VERSION=${{ needs.test-and-build.outputs.version }}
 
   deploy:
     name: Deploy backend and frontend
@@ -126,14 +93,14 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} <<EOF
             cd ci-cd
-            docker-compose -f docker-compose.yml pull job-connect-backend -q
-            docker-compose -f docker-compose.yml up -d job-connect-backend
+            docker-compose -f docker-compose.yml pull -q
+            docker-compose -f docker-compose.yml up -d
           EOF
 
       - name: Deploy frontend (after backend is ready)
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} <<EOF
             cd ci-cd
-            docker-compose -f docker-compose.yml pull job-connect-frontend -q
-            docker-compose -f docker-compose.yml up -d job-connect-frontend
+            docker-compose -f docker-compose.yml pull -q
+            docker-compose -f docker-compose.yml up -d
           EOF
