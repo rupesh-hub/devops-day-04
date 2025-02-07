@@ -11,8 +11,8 @@ public class Paging {
 
     private int page;
     private int size;
-    private long totalElement;
-    private long totalPage;
+    private long totalElements;
+    private long totalPages;
     private boolean first;
     private boolean last;
 

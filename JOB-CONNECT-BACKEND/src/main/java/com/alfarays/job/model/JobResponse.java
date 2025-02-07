@@ -2,7 +2,7 @@ package com.alfarays.job.model;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -15,9 +15,9 @@ public class JobResponse {
     private String title;
     private String description;
     private String company;
-    private LocalDateTime createdAt;
+    private Date createdAt;
     private String createdBy;
-    private LocalDateTime updatedAt;
+    private Date updatedAt;
     private String updatedBy;
     private boolean enabled;
 

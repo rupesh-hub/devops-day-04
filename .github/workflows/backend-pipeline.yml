@@ -1,0 +1,144 @@
+name: JOB CONNECT BACKEND CI/CD PIPELINE
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - JOB-CONNECT-BACKEND/**
+      - docker/backend/**
+      - job-connect-services.yml
+      - .github/workflows/backend-*.yml
+
+jobs:
+  compile:
+    runs-on: self-hosted
+    name: Compile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup java environment
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'corretto'
+
+      - name: Compile project
+        run: |
+          cd JOB-CONNECT-BACKEND
+          ./mvnw clean compile
+
+  unit-tests:
+    runs-on: self-hosted
+    name: Unit tests
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup java environment
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'corretto'
+
+      - name: Running unit tests
+        run: |
+          cd JOB-CONNECT-BACKEND
+          ./mvnw clean test
+
+  build:
+    runs-on: self-hosted
+    needs: [compile, unit-tests]
+    name: Build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup java environment
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'corretto'
+
+      - name: Build project
+        run: |
+          cd JOB-CONNECT-BACKEND
+          ./mvnw clean package
+
+  build-image:
+    runs-on: self-hosted
+    needs: [build]
+    name: Build docker image
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup java environment
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'corretto'
+
+      - name: Build project
+        run: |
+          cd JOB-CONNECT-BACKEND
+          ./mvnw clean package
+
+      - name: Extract project version
+        id: extract_version
+        run: |
+          cd backend
+          echo "VERSION=$(./mvnw -q -Dexec.executable='echo' -Dexec.args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_OUTPUT
+
+      - name: Login to dockerhub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push image to dockerhub
+        uses: docker/build-push-action@v5
+        with:
+          context: backend
+          file: docker/backend/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: ${{ secrets.DOCKER_USERNAME }}/job-connect-backend:${{ steps.extract_version.outputs.VERSION }},${{ secrets.DOCKER_USERNAME }}/job-connect-backend:latest
+          build-args: |
+            PROFILE=dev
+            APP_VERSION=${{ steps.extract_version.outputs.VERSION }}
+
+  deploy:
+    name: Deploy backend
+    runs-on: self-hosted
+    needs: [build-image]
+    steps:
+      - name: Add ssh key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: Create deployment folder
+        run: ssh ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} "mkdir -p ci-cd"
+
+      - name: Copy compose file
+        run: scp job-connect-services.yml ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }}:ci-cd/docker-compose.yml
+
+      - name: Set ENV variable and deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} <<EOF
+            cd ci-cd
+            docker-compose -f job-connect-services.yml pull -q
+            docker-compose -f job-connect-services.yml up -d
+          EOF
+
+#

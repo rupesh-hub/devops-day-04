@@ -1,39 +1,34 @@
-package com.alfarays.authentication;
+package com.alfarays.authentication.resource;
 
-import com.alfarays.security.TokenService;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import com.alfarays.authentication.model.AuthenticationRequest;
+import com.alfarays.authentication.model.RegistrationRequest;
+import com.alfarays.authentication.service.AuthenticationService;
+import com.alfarays.util.GlobalResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @RestController
+@RequestMapping(path = "/authentication")
+@RequiredArgsConstructor
 public class AuthenticationResource {
 
-    private final AuthenticationManager authenticationManager;
-    private final TokenService tokenService;
+    private final AuthenticationService authenticationService;
 
-    public AuthenticationResource(AuthenticationManager authenticationManager, TokenService tokenService) {
-        this.authenticationManager = authenticationManager;
-        this.tokenService = tokenService;
+    @PostMapping("/sign-in")
+    public ResponseEntity<GlobalResponse<?>> authenticate(@RequestBody @Valid AuthenticationRequest request) {
+        return ResponseEntity.ok(authenticationService.authenticate(request));
     }
 
-    @PostMapping("/login")
-    public Map<String, String> login(@RequestBody AuthenticationRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
-        );
-
-        String token = tokenService.generateToken((User) authentication.getPrincipal());
-
-        Map<String, String> response = new HashMap<>();
-        response.put("token", token);
-        return response;
+    @PostMapping("/sign-up")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResponseEntity<GlobalResponse<?>> register(@RequestBody @Valid RegistrationRequest request) {
+        return new ResponseEntity<>(authenticationService.register(request), HttpStatus.OK);
     }
 
 }

@@ -48,3 +48,7 @@ management:
 application:
   cors:
     origins: http://localhost:4200,http://localhost:8080,http://20.55.25.220:8080,http://20.55.25.220:8181
+  security:
+    token:
+      secret_key: 6WAG0O1I5ACSQ1ZMO6ZSEDCJ3RFOMC1Q1BC4MLWEBYBL3UAH91B6NWLXNH4NGN8URT2AEEMTHXHNB2FMRFVJY4JKL88LYHMPYTZCA3GNEVM4N9Q37ZSF4DEUVLDLP
+      expiration: 3600000

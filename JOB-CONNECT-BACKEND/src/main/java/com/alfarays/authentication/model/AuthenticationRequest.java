@@ -1,4 +1,4 @@
-package com.alfarays.authentication;
+package com.alfarays.authentication.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,7 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class AuthenticationRequest {
 
-    private String username;
+    private String email;
     private String password;
 
 }

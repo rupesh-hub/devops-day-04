@@ -8,8 +8,7 @@ import com.alfarays.util.GlobalResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -151,8 +150,8 @@ public class JobService implements IJobService {
                     .orElseThrow(() -> new EntityNotFoundException("Job not found with id: " + id));
 
             job.setEnabled(status);
-            job.setUpdatedAt(LocalDateTime.now());
-            job.setUpdatedBy("SYSTEM");
+            job.setModifiedOn(new Date());
+            job.setModifiedBy("SYSTEM");
 
             jobRepository.save(job);
             return GlobalResponse.success();
@@ -169,10 +168,10 @@ public class JobService implements IJobService {
                 .title(job.getTitle())
                 .description(job.getDescription())
                 .company(job.getCompany())
-                .createdAt(job.getCreatedAt())
+                .createdAt(job.getCreatedOn())
                 .createdBy(job.getCreatedBy())
-                .updatedAt(job.getUpdatedAt())
-                .updatedBy(job.getUpdatedBy())
+                .updatedAt(job.getModifiedOn())
+                .updatedBy(job.getModifiedBy())
                 .enabled(job.getEnabled())
                 .build();
     }

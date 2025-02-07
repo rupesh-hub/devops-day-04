@@ -1,0 +1,66 @@
+name: JOB CONNECT FRONTEND CI/CD PIPELINE
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - JOB-CONNECT-FRONTEND/**
+      - docker/frontend/**
+      - job-connect-services.yml
+      - .github/workflows/frontend-*.yml
+
+jobs:
+  build-image:
+    runs-on: self-hosted
+    name: Build frontend docker image
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract project version
+        id: project-version
+        run: |
+          cd frontend
+          echo "VERSION=$(jq -r '.version' package.json)" >> $GITHUB_OUTPUT
+
+      - name: Login to dockerhub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push image to dockerhub
+        uses: docker/build-push-action@v5
+        with:
+          context: frontend
+          file: docker/frontend/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: ${{ secrets.DOCKER_USERNAME }}/job-connect-frontend:${{ steps.project-version.outputs.VERSION }},${{ secrets.DOCKER_USERNAME }}/job-connect-frontend:latest
+
+  deploy:
+    name: Deploy frontend
+    runs-on: self-hosted
+    needs: [ build-image ]
+    steps:
+      - name: Add ssh key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.AZURE_PRIVATE_KEY }}
+
+      - name: Create deployment folder
+        run: ssh ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} "mkdir -p ci-cd"
+
+      - name: Copy compose file
+        run: scp job-connect-services.yml ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }}:ci-cd/job-connect-services.yml
+
+      - name: Set ENV variable and deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} <<EOF
+            cd ci-cd
+            docker-compose -f job-connect-services.yml pull -q
+            docker-compose -f job-connect-services.yml up -d
+          EOF
