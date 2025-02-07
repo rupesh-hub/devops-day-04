@@ -21,7 +21,7 @@ services:
 
   job-connect-backend:
     container_name: job-connect-backend
-    image: ${{ secrets.DOCKER_USERNAME }}/job-connect-backend:latest
+    image: rupesh1997/job-connect-backend:latest
     ports:
       - "8181:8181"
     networks:
@@ -39,7 +39,7 @@ services:
 
   job-connect-frontend:
     container_name: job-connect-frontend
-    image: ${{ secrets.DOCKER_USERNAME }}/job-connect-frontend:latest
+    image: rupesh1997/job-connect-frontend:latest
     ports:
       - "8080:80"
     networks:
