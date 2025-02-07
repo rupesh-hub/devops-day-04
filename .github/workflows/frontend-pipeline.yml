@@ -40,27 +40,27 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: ${{ secrets.DOCKER_USERNAME }}/job-connect-frontend:${{ steps.project-version.outputs.VERSION }},${{ secrets.DOCKER_USERNAME }}/job-connect-frontend:latest
-
-  deploy:
-    name: Deploy frontend
-    runs-on: self-hosted
-    needs: [ build-image ]
-    steps:
-      - name: Add ssh key
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.AZURE_PRIVATE_KEY }}
-
-      - name: Create deployment folder
-        run: ssh ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} "mkdir -p ci-cd"
-
-      - name: Copy compose file
-        run: scp docker-compose.yml ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }}:ci-cd/docker-compose.yml
-
-      - name: Deploy frontend (wait for backend to be healthy)
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} <<EOF
-            cd ci-cd
-            docker-compose -f docker-compose.yml pull job-connect-frontend -q
-            docker-compose -f docker-compose.yml up -d job-connect-frontend
-          EOF
+#
+#  deploy:
+#    name: Deploy frontend
+#    runs-on: self-hosted
+#    needs: [ build-image ]
+#    steps:
+#      - name: Add ssh key
+#        uses: webfactory/ssh-agent@v0.5.3
+#        with:
+#          ssh-private-key: ${{ secrets.AZURE_PRIVATE_KEY }}
+#
+#      - name: Create deployment folder
+#        run: ssh ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} "mkdir -p ci-cd"
+#
+#      - name: Copy compose file
+#        run: scp docker-compose.yml ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }}:ci-cd/docker-compose.yml
+#
+#      - name: Deploy frontend (wait for backend to be healthy)
+#        run: |
+#          ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} <<EOF
+#            cd ci-cd
+#            docker-compose -f docker-compose.yml pull job-connect-frontend -q
+#            docker-compose -f docker-compose.yml up -d job-connect-frontend
+#          EOF
