@@ -76,7 +76,7 @@ jobs:
   deploy:
     name: Deploy backend and frontend
     runs-on: self-hosted
-    needs: [ build-image ]
+    needs: [ docker-publish ]
     steps:
       - name: Add ssh key
         uses: webfactory/ssh-agent@v0.5.3
