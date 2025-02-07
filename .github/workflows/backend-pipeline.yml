@@ -125,7 +125,7 @@ jobs:
       - name: Add ssh key
         uses: webfactory/ssh-agent@v0.5.3
         with:
-          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.AZURE_PRIVATE_KEY }}
 
       - name: Create deployment folder
         run: ssh ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} "mkdir -p ci-cd"
