@@ -7,7 +7,7 @@ on:
     paths:
       - JOB-CONNECT-FRONTEND/**
       - docker/frontend/**
-      - job-connect-services.yml
+      - docker-compose.yml
       - .github/workflows/frontend-*.yml
 
 jobs:
@@ -55,12 +55,12 @@ jobs:
         run: ssh ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} "mkdir -p ci-cd"
 
       - name: Copy compose file
-        run: scp job-connect-services.yml ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }}:ci-cd/job-connect-services.yml
+        run: scp docker-compose.yml ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }}:ci-cd/docker-compose.yml
 
-      - name: Set ENV variable and deploy
+      - name: Deploy frontend (wait for backend to be healthy)
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} <<EOF
             cd ci-cd
-            docker-compose -f job-connect-services.yml pull -q
-            docker-compose -f job-connect-services.yml up -d
+            docker-compose -f docker-compose.yml pull job-connect-frontend -q
+            docker-compose -f docker-compose.yml up -d job-connect-frontend
           EOF

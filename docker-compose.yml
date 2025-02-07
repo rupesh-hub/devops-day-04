@@ -19,21 +19,9 @@ services:
       retries: 5
       start_period: 60s
 
-  job-connect-frontend:
-    container_name: job-connect-frontend
-    image: rupesh1997/job-connect-frontend:1.0.0
-    ports:
-      - "8080:80"
-    networks:
-      - job_connect_network
-    depends_on:
-      job-connect-backend:
-        condition: service_healthy
-    restart: always
-
   job-connect-backend:
     container_name: job-connect-backend
-    image: rupesh1997/job-connect-backend:1.0.0
+    image: ${{ secrets.DOCKER_USERNAME }}/job-connect-backend:latest
     ports:
       - "8181:8181"
     networks:
@@ -48,6 +36,18 @@ services:
       retries: 5
       start_period: 15s
       timeout: 5s
+
+  job-connect-frontend:
+    container_name: job-connect-frontend
+    image: ${{ secrets.DOCKER_USERNAME }}/job-connect-frontend:latest
+    ports:
+      - "8080:80"
+    networks:
+      - job_connect_network
+    depends_on:
+      job-connect-backend:
+        condition: service_healthy
+    restart: always
 
 networks:
   job_connect_network:

@@ -7,7 +7,7 @@ on:
     paths:
       - JOB-CONNECT-BACKEND/**
       - docker/backend/**
-      - job-connect-services.yml
+      - docker-compose.yml
       - .github/workflows/backend-*.yml
 
 jobs:
@@ -53,7 +53,7 @@ jobs:
 
   build:
     runs-on: self-hosted
-    needs: [compile, unit-tests]
+    needs: [ compile, unit-tests ]
     name: Build
     steps:
       - name: Checkout repository
@@ -74,24 +74,12 @@ jobs:
 
   build-image:
     runs-on: self-hosted
-    needs: [build]
     name: Build docker image
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Setup java environment
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: 'corretto'
-
-      - name: Build project
-        run: |
-          cd JOB-CONNECT-BACKEND
-          ./mvnw clean package
 
       - name: Extract project version
         id: extract_version
@@ -105,7 +93,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push image to dockerhub
+      - name: Build and push backend image to dockerhub
         uses: docker/build-push-action@v5
         with:
           context: JOB-CONNECT-BACKEND
@@ -114,13 +102,13 @@ jobs:
           platforms: linux/amd64
           tags: ${{ secrets.DOCKER_USERNAME }}/job-connect-backend:${{ steps.extract_version.outputs.VERSION }},${{ secrets.DOCKER_USERNAME }}/job-connect-backend:latest
           build-args: |
-            PROFILE=dev
+            PROFILE=production
             APP_VERSION=${{ steps.extract_version.outputs.VERSION }}
 
   deploy:
-    name: Deploy backend
+    name: Deploy backend and frontend
     runs-on: self-hosted
-    needs: [build-image]
+    needs: [ build-image ]
     steps:
       - name: Add ssh key
         uses: webfactory/ssh-agent@v0.5.3
@@ -131,12 +119,20 @@ jobs:
         run: ssh ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} "mkdir -p ci-cd"
 
       - name: Copy compose file
-        run: scp job-connect-services.yml ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }}:ci-cd/job-connect-services.yml
+        run: scp docker-compose.yml ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }}:ci-cd/docker-compose.yml
 
-      - name: Set ENV variable and deploy
+      - name: Set ENV variable and deploy backend
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} <<EOF
             cd ci-cd
-            docker-compose -f job-connect-services.yml pull -q
-            docker-compose -f job-connect-services.yml up -d
+            docker-compose -f docker-compose.yml pull job-connect-backend -q
+            docker-compose -f docker-compose.yml up -d job-connect-backend
+          EOF
+
+      - name: Deploy frontend (after backend is ready)
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_USERNAME }}@${{ secrets.AZURE_PUBLIC_IP }} <<EOF
+            cd ci-cd
+            docker-compose -f docker-compose.yml pull job-connect-frontend -q
+            docker-compose -f docker-compose.yml up -d job-connect-frontend
           EOF
