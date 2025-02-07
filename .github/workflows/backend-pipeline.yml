@@ -35,9 +35,9 @@ jobs:
           ./mvnw clean verify package
 
       - name: Extract version
-        id: get_version  # Add ID to reference this step
+        id: get_version
         run: |
-          cd CHAT-SERVICE
+          cd JOB-CONNECT-BACKEND
           VERSION=$(./mvnw -q -Dexec.executable='echo' -Dexec.args='${project.version}' --non-recursive exec:exec)
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"  # Debug output
