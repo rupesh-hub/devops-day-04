@@ -29,7 +29,7 @@ services:
     networks:
       - job_connect_network
     depends_on:
-      gateway-service:
+      job-connect-backend:
         condition: service_healthy
     restart: always
 
