@@ -108,7 +108,7 @@ jobs:
       - name: Build and push image to dockerhub
         uses: docker/build-push-action@v5
         with:
-          context: backend
+          context: JOB-CONNECT-BACKEND
           file: docker/backend/Dockerfile
           push: true
           platforms: linux/amd64
@@ -140,5 +140,3 @@ jobs:
             docker-compose -f job-connect-services.yml pull -q
             docker-compose -f job-connect-services.yml up -d
           EOF
-
-#

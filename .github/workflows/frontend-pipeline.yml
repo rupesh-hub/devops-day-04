@@ -23,7 +23,7 @@ jobs:
       - name: Extract project version
         id: project-version
         run: |
-          cd frontend
+          cd JOB-CONNECT-FRONTEND
           echo "VERSION=$(jq -r '.version' package.json)" >> $GITHUB_OUTPUT
 
       - name: Login to dockerhub
@@ -35,7 +35,7 @@ jobs:
       - name: Build and push image to dockerhub
         uses: docker/build-push-action@v5
         with:
-          context: frontend
+          context: JOB-CONNECT-FRONTEND
           file: docker/frontend/Dockerfile
           push: true
           platforms: linux/amd64
