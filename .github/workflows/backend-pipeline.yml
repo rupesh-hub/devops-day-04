@@ -73,6 +73,7 @@ jobs:
           ./mvnw clean package
 
   build-image:
+    needs: [ build ]
     runs-on: self-hosted
     name: Build docker image
     steps:
