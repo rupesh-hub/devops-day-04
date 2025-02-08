@@ -1,13 +1,13 @@
 services:
 
-  mysql-service:
-    container_name: mysql-service
+  mysql:
+    container_name: mysql
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: job_connect_db
     networks:
-      - job_connect_network
+      - devops
     restart: unless-stopped
     volumes:
       - mysql_data:/var/lib/mysql
@@ -26,10 +26,10 @@ services:
     ports:
       - "8181:8181"
     networks:
-      - job_connect_network
+      - devops
     restart: always
     depends_on:
-      - mysql-service
+      - mysql
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8181/api/v1.0.0/actuator/health" ]
       interval: 10s
@@ -43,13 +43,13 @@ services:
     ports:
       - "8080:80"
     networks:
-      - job_connect_network
+      - devops
     depends_on:
       - job-connect-backend
     restart: always
 
 networks:
-  job_connect_network:
+  devops:
     driver: bridge
 
 volumes:

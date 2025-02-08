@@ -17,7 +17,7 @@ COPY --from=build /build/target/job-connect-*.jar /app/
 
 EXPOSE 8181
 
-ENV DB_URL=jdbc:mysql://mysql-service:5432/job_connect_db
+ENV DB_URL=jdbc:mysql://mysql:3306/job_connect_db
 ENV ACTIVE_PROFILE=${PROFILE}
 ENV JAR_VERSION=${APP_VERSION}
 
