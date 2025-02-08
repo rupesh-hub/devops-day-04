@@ -21,6 +21,9 @@ COPY --from=build-stage /app/dist/job-connect-frontend/browser /usr/share/nginx/
 
 EXPOSE 80
 
-# cd frontend
-# docker build -t rupesh1997/job-connect-frontend:1.0.0 -f ../docker/frontend/Dockerfile .
-# docker run -d --network job_connect_job_connect_network -p 8080:80 --name job-connect-frontend rupesh1997/job-connect-frontend:1.0.0
+#docker exec -it job-connect-frontend sh
+#docker stop job-connect-frontend
+#docker rm job-connect-frontend
+#docker rmi rupesh1997/job-connect-frontend:1.0.0
+#docker build -t rupesh1997/job-connect-frontend:1.0.0 -f docker/frontend/Dockerfile .
+#docker run -p 8080:80 --name job-connect-frontend rupesh1997/job-connect-frontend:1.0.0

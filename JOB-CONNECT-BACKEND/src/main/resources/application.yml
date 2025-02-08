@@ -1,11 +1,17 @@
 spring:
   profiles:
-    active: development
+    active: dev
+  servlet:
+    multipart:
+      max-file-size: 50MB
 
   application:
-    name: job-connect
+    name: job-connect-backend
+
+springdoc:
+  default-produces-media-type: application/json
 
 server:
   port: 8181
   servlet:
-    context-path: /api/v1.0.0
+    context-path: /api/v1.0.0/
