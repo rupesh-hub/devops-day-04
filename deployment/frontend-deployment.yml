@@ -1,0 +1,23 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: job-connect-frontend
+  labels:
+    app: frontend
+  namespace: devops
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: job-connect-frontend
+  template:
+    metadata:
+      labels:
+        app: job-connect-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: rupesh1997/job-connect-frontend:1.0.0
+          ports:
+            - containerPort: 80

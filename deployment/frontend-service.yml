@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: job-connect-frontend
+  labels:
+    app: job-connect-frontend
+  namespace: devops
+spec:
+  type: ClusterIP
+  selector:
+    app: job-connect-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
